@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Web Game Engine IDE — Modulaire</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bg: { DEFAULT: '#0b0f17', soft: '#101624', softer: '#0d1320' },
+            panel: { DEFAULT: '#111827', soft: '#0f172a' },
+            brand: { DEFAULT: '#38bdf8', fg: '#a5f3fc' },
+            pin: {
+              bool:'#ef4444',
+              float:'#9ca3af',
+              int:'#22c55e',
+              string:'#60a5fa',
+              time:'#ffffff',
+              object:'#fb923c',
+              audio:'#a78bfa',
+              video:'#fef9c3',
+              vector:'#7c3aed'
+            }
+          },
+          boxShadow: {
+            soft:'0 1px 0 0 rgba(255,255,255,0.04) inset, 0 0 0 1px rgba(255,255,255,0.03)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* --- Layout / UX --- */
+    .divider-v{ width:6px; cursor:col-resize }
+    .divider-h{ height:6px; cursor:row-resize }
+    .dragging{ user-select:none !important }
+    .nodemap-cursor{ cursor:grab } .nodemap-panning{ cursor:grabbing }
+
+    /* --- Nodes --- */
+    .node{ user-select:none }
+    .node .header{ cursor:move }
+    .node.selected{ outline:2px solid rgba(56,189,248,.6); outline-offset:0; }
+
+    /* --- Pins --- */
+    .port{ width:12px; height:12px; border-radius:999px; box-shadow:0 0 0 2px rgba(0,0,0,.25) inset }
+    .port[data-dir="in"]{ outline:1px solid rgba(255,255,255,.25) }
+    .port[data-dir="out"]{ outline:1px solid rgba(255,255,255,.10) }
+    .port:hover{ transform:scale(1.15) }
+    .port.field{ border-radius:2px; transform:rotate(45deg); }
+    .port.field:hover{ transform:rotate(45deg) scale(1.15); }
+
+    /* --- Wires --- */
+    svg#wires{ pointer-events:none }             /* le fond SVG ne capte rien */
+    svg#wires path.edge{ pointer-events:auto }   /* chaque câble est cliquable (Ctrl+clic) */
+    .ghost-wire{ pointer-events:none; stroke-dasharray:6 4 }
+    /* feedback mismatch (jaune/noir + croix rouge au milieu) */
+    .mismatch-wire-y{ stroke:#facc15; stroke-width:4; stroke-dasharray:10 6; fill:none }
+    .mismatch-wire-k{ stroke:#0b0f17; stroke-width:2.5; stroke-dasharray:10 6; stroke-dashoffset:8; fill:none }
+
+    /* --- Menus --- */
+    .menu{ display:none } .menu[data-open="true"]{ display:block }
+    /* Node area layering */
+	#node-area { position: relative; overflow: hidden; }
+	#node-area #wires { z-index: 5; pointer-events: none; }
+	#node-area .node { position: absolute; z-index: 10; pointer-events: auto; }
+	#node-area .frame { z-index: 8; pointer-events: auto; }
+	/* Tout overlay décoratif doit laisser passer la souris */
+	.overlay, .grid-overlay { pointer-events: none; }
+  </style>
+</head>
+
+<body class="h-full bg-bg text-slate-200">
+  <div id="app" class="h-dvh flex flex-col">
+    <!-- TOPBAR -->
+    <header class="shrink-0 sticky top-0 z-30 bg-panel/80 backdrop-blur border-b border-white/5">
+      <div class="px-3 sm:px-4 py-2 flex items-center gap-2">
+        <!-- Logo -->
+        <div class="flex items-center gap-2">
+          <div class="size-7 rounded bg-brand/15 grid place-items-center">
+            <svg viewBox="0 0 24 24" class="w-4 h-4 text-brand"><path fill="currentColor" d="M12 2l3.5 6h6l-4.8 4 2 7L12 15l-6.7 4 2-7L2.5 8h6z"/></svg>
+          </div>
+          <span class="font-semibold tracking-wide">Web Game Engine IDE</span>
+        </div>
+
+        <!-- Fichier -->
+        <div class="relative ml-2">
+          <button id="btn-file" class="px-3 py-1.5 rounded hover:bg-white/10 border border-white/10 text-sm">Fichier ▾</button>
+          <div id="menu-file" class="menu absolute mt-1 w-56 bg-panel/90 border border-white/10 rounded shadow-soft z-40">
+            <button id="mi-new"  class="w-full text-left px-3 py-2 hover:bg-white/10 text-sm">Nouveau projet</button>
+            <label class="block px-3 py-2 hover:bg-white/10 text-sm cursor-pointer">
+              Charger projet (JSON) <input id="file-load" type="file" accept="application/json" class="hidden">
+            </label>
+            <button id="mi-save" class="w-full text-left px-3 py-2 hover:bg-white/10 text-sm">Enregistrer projet (JSON)</button>
+          </div>
+        </div>
+
+        <!-- Onglets -->
+        <nav class="ml-2 flex gap-1 text-sm">
+          <button class="ide-tab px-3 py-1.5 rounded hover:bg-white/5" data-target="tab-visual">Visual Scripting</button>
+          <button class="ide-tab px-3 py-1.5 rounded hover:bg-white/5" data-target="tab-code">Code</button>
+          <button class="ide-tab px-3 py-1.5 rounded hover:bg-white/5" data-target="tab-viewport">3D Viewport</button>
+          <button class="ide-tab px-3 py-1.5 rounded hover:bg-white/5" data-target="tab-shader">Shader Editor</button>
+          <button class="ide-tab px-3 py-1.5 rounded hover:bg-white/5" data-target="tab-audio">Audio</button>
+          <button class="ide-tab px-3 py-1.5 rounded hover:bg-white/5" data-target="tab-animation">Animation</button>
+          <button class="ide-tab px-3 py-1.5 rounded hover:bg-white/5" data-target="tab-video">Video</button>
+        </nav>
+
+        <div class="ml-auto flex items-center gap-2">
+          <button id="btn-dark" class="px-3 py-1.5 rounded hover:bg-white/10 border border-white/10">Dark</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- BODY -->
+    <div class="grow min-h-0 flex">
+      <!-- OUTLINER -->
+      <aside id="left-pane" class="w-64 min-w-48 max-w-[40vw] bg-panel/60 border-r border-white/5 flex flex-col">
+        <div class="px-3 py-2 border-b border-white/5"><h2 class="text-xs uppercase tracking-wider text-slate-400">Outliner</h2></div>
+        <div class="grow min-h-0 overflow-auto p-2 space-y-3">
+          <ul id="obj-list" class="space-y-1 text-sm">
+            <li class="bg-white/5 rounded p-2">PlayerCapsule</li>
+            <li class="bg-white/5 rounded p-2">Track_A01</li>
+            <li class="bg-white/5 rounded p-2">WaterVolume</li>
+            <li class="bg-white/5 rounded p-2">SkyDome</li>
+          </ul>
+          <p class="text-xs text-slate-400">Scripts (Visual)</p>
+          <ul id="script-list" class="p-2 pt-1 text-sm space-y-1"></ul>
+        </div>
+      </aside>
+      <div id="div-left" class="divider-v bg-white/5"></div>
+
+      <!-- CENTER -->
+      <main id="center-pane" class="grow min-w-[40vw] bg-bg/60">
+        <!-- VISUAL SCRIPTING -->
+        <section id="tab-visual" class="h-full flex" data-active="true">
+          <!-- Node Library -->
+          <aside class="w-64 border-r border-white/5 bg-panel/50 flex flex-col">
+            <div class="px-3 py-2 border-b border-white/5">
+              <h3 class="text-xs uppercase tracking-wider text-slate-400">Node Library</h3>
+            </div>
+            <div id="node-library" class="grow overflow-auto p-2 space-y-3 text-sm"></div>
+          </aside>
+
+          <!-- Canvas -->
+          <div class="grow min-w-0 relative">
+            <div class="px-3 py-2 border-b border-white/5 flex items-center gap-2">
+              <h3 class="text-xs uppercase tracking-wider text-slate-400">Nodes & Wires</h3>
+              <span class="text-[11px] text-slate-400">Drag OUT→IN • molette=zoom • milieu=pan • Ctrl+clic câble=couper</span>
+              <div class="ml-auto flex gap-2 text-xs items-center">
+                <label class="flex items-center gap-2"><span>Name</span><input id="vs-name" type="text" value="MyLogic" class="bg-white/5 border border-white/10 rounded px-2 py-1"></label>
+                <label class="flex items-center gap-2"><span>Assign</span><select id="vs-assign" class="bg-white/5 border border-white/10 rounded px-2 py-1"></select></label>
+                <button id="btn-save-graph" class="px-2 py-1 rounded border border-white/10 hover:bg-white/10">Save Script</button>
+                <div class="px-2 py-1 rounded border border-white/10 select-none">Zoom: <span id="zoom-label">100%</span></div>
+              </div>
+            </div>
+            <div id="node-area" class="relative h-[calc(100%-40px)] overflow-hidden bg-panel/40 nodemap-cursor">
+              <svg id="wires" class="absolute inset-0" width="100%" height="100%"></svg>
+              <div id="viewport" class="absolute inset-0" style="transform-origin:0 0;"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Autres onglets (placeholders) -->
+        <section id="tab-code" class="h-full hidden"></section>
+        <section id="tab-viewport" class="h-full hidden"></section>
+        <section id="tab-shader" class="h-full hidden"></section>
+        <section id="tab-audio" class="h-full hidden"></section>
+        <section id="tab-animation" class="h-full hidden"></section>
+        <section id="tab-video" class="h-full hidden"></section>
+      </main>
+
+      <div id="div-right" class="divider-v bg-white/5"></div>
+
+      <!-- INSPECTOR (simple, non contextuel) -->
+      <aside id="right-pane" class="w-72 min-w-56 max-w-[45vw] bg-panel/60 border-l border-white/5 flex flex-col">
+        <div class="px-3 py-2 border-b border-white/5"><h2 class="text-xs uppercase tracking-wider text-slate-400">Inspector</h2></div>
+        <div class="grow min-h-0 overflow-auto p-3 space-y-3">
+          <div class="bg-white/5 rounded-lg p-3">
+            <div class="text-xs text-slate-400 mb-2">Selected</div>
+            <div id="selection" class="text-sm">—</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div id="div-bottom" class="divider-h bg-white/5"></div>
+
+    <!-- CONSOLE -->
+    <footer id="bottom-pane" class="h-40 min-h-24 max-h-[50vh] bg-panel/60 border-t border-white/5">
+      <div class="px-3 py-2 text-xs uppercase tracking-wider text-slate-400 border-b border-white/5">Console</div>
+      <div id="console" class="h-[calc(100%-2rem)] overflow-auto p-2 text-[12px] font-mono whitespace-pre-wrap">
+        › IDE prêt.
+      </div>
+    </footer>
+  </div>
+
+  <!-- Charge l'app (AUCUN boot.js ici) -->
+  <script type="module" src="src/js/app.js"></script>
+</body>
+</html>

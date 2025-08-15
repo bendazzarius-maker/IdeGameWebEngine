@@ -1,0 +1,175 @@
+// ======================================================================
+// src/js/app.js  (clean ASCII version)
+// ======================================================================
+
+// BLOCK 1 — IMPORTS
+import { renderLibrary } from './modules/visual/Library.js';
+import Inspector from './modules/inspector/inspector.js';
+import View3D from './modules/viewport3d/engine.js';              // optional; ok if the canvas is absent
+import { mountOutliner } from './modules/outliner/outliner.js';    // optional; ok if file exists
+import { attachContextMenu } from './modules/visual/context.js';   // optional; ok if file exists
+
+// BLOCK 2 — HELPERS
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+// BLOCK 3 — ensureGraph (safe)
+async function ensureGraph() {
+  if (window.graph) return window.graph;
+  const area = $('#node-area') || $('[data-role="vs-area"]');
+  if (!area) return null;
+  try {
+    const mod = await import('./modules/visual/graph.js');
+    if (typeof mod.createGraph === 'function') {
+      window.graph = mod.createGraph({ area });
+      return window.graph;
+    }
+  } catch (e) {
+    console.warn('[app] graph.js import skipped:', e && e.message ? e.message : e);
+  }
+  return window.graph || null;
+}
+
+// BLOCK 4 — initLibrary (with create and drag support)
+async function initLibrary() {
+  const el = $('[data-role="node-library"], #node-library, .node-library');
+  if (!el) return;
+
+  const onCreate = async (type) => {
+    const g = await ensureGraph();
+    if (!g || typeof g.createNode !== 'function') return;
+    const node = g.createNode(type);
+    if (node && node.view) node.view.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  };
+
+  await renderLibrary(el, { onCreate });
+}
+
+// BLOCK 5 — initInspectorUI
+function initInspectorUI(active = 'visual') {
+  const insp = $('[data-role="inspector"], #inspector');
+  if (!insp) return;
+  Inspector.initInspector(insp);
+  Inspector.switchInspector(active);
+}
+
+// BLOCK 6 — initOutliner (try our outliner; if not present, try bridge)
+function initOutlinerUI() {
+  const panel = $('[data-role="outliner-list"], #outliner-list, .outliner-list');
+  if (!panel) return;
+
+  // 1) Try our outliner module (no error if it is not available)
+  try { mountOutliner(panel); } catch (_) {}
+
+  // 2) Generic bridge: if your outliner already renders items with data-kind/data-id
+  panel.addEventListener('click', (e) => {
+    const it = e.target.closest('[data-kind][data-id]');
+    if (!it) return;
+    const id = it.getAttribute('data-id');
+    // dynamic import kept minimal and with the correct path
+    import('./services/outliner.service.js')
+      .then((mod) => {
+        const S = mod.OutlinerService || mod.default;
+        if (S && typeof S.selectOnly === 'function') S.selectOnly(id);
+      })
+      .catch(() => { /* silent if service not present */ });
+  }, { capture: false });
+}
+
+// BLOCK 7 — initNodeAreaDnD (Library -> Visual Scripting)
+function initNodeAreaDnD() {
+  const area = $('#node-area') || $('[data-role="vs-area"]');
+  if (!area) return;
+
+  area.addEventListener('dragover', (e) => {
+    const dt = e.dataTransfer;
+    if (!dt) return;
+    if (dt.types && (dt.types.includes('text/node-type') || dt.types.includes('text/plain'))) {
+      e.preventDefault();
+    }
+  });
+
+  area.addEventListener('drop', async (e) => {
+    const dt = e.dataTransfer;
+    if (!dt) return;
+    const type = dt.getData('text/node-type') || dt.getData('text/plain');
+    if (!type) return;
+    e.preventDefault();
+
+    const g = await ensureGraph();
+    if (!g || typeof g.createNode !== 'function') return;
+
+    const rect = area.getBoundingClientRect();
+    const scale = typeof g.getScale === 'function' ? (g.getScale() || 1) : 1;
+    const x = (e.clientX - rect.left) / scale;
+    const y = (e.clientY - rect.top)  / scale;
+
+    const node = g.createNode(type);
+    if (node) {
+      node.x = x; node.y = y;
+      if (node.view) { node.view.style.left = x + 'px'; node.view.style.top = y + 'px'; }
+      if (typeof g.redrawWires === 'function') g.redrawWires();
+    }
+  });
+}
+
+// BLOCK 8 — initContextMenu (right click)
+function initContextMenu() {
+  const area = $('#node-area') || $('[data-role="vs-area"]');
+  if (!area || !window.graph) return;
+  try { attachContextMenu(area, window.graph); } catch (_) {}
+}
+
+// BLOCK 9 — initTabs (IDE tabs)
+function initTabs() {
+  const conf = ['visual','code','viewport','shader','audio','animation','video'];
+  const sections = conf
+    .map((key) => ({ key, el: document.getElementById('tab-' + key) }))
+    .filter((x) => x.el);
+
+  function show(key) {
+    sections.forEach(({ key: k, el }) => el.classList.toggle('hidden', k !== key));
+    const map = { visual: 'visual', code: 'code', viewport: 'viewport3d', shader: 'shader', audio: 'audio', animation: 'animation', video: 'video' };
+    Inspector.switchInspector(map[key] || 'visual');
+
+    if (key === 'viewport') {
+      const canvas = $('[data-role="viewport3d-canvas"], #viewport3d');
+      if (canvas && View3D && typeof View3D.initViewport3D === 'function' && !canvas._vs3dInit) {
+        try { View3D.initViewport3D(canvas); canvas._vs3dInit = true; } catch (e) { console.error('[app] viewport3D init:', e); }
+      }
+    }
+  }
+
+  $$('.ide-tab').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tgt = btn.getAttribute('data-target'); // e.g. "tab-visual"
+      if (!tgt) return;
+      const key = tgt.replace(/^tab-/, '');
+      show(key);
+      $$('.ide-tab').forEach((b) => b.classList.remove('bg-white/10'));
+      btn.classList.add('bg-white/10');
+    });
+  });
+
+  // default tab
+  show('visual');
+  const first = $('.ide-tab[data-target="tab-visual"]');
+  if (first) first.classList.add('bg-white/10');
+}
+
+// BLOCK 10 — initUI + DOM ready
+async function initUI() {
+  await ensureGraph();
+  await initLibrary();
+  initInspectorUI('visual');
+  initOutlinerUI();
+  initNodeAreaDnD();
+  initContextMenu();
+  initTabs();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initUI, { once: true });
+} else {
+  initUI();
+}

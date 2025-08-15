@@ -1,0 +1,4 @@
+/* Visual Scripting interaction layers */
+#node-area, [data-role="vs-area"] { position: relative; overflow: hidden; pointer-events: auto; }
+#node-area .overlay, #node-area svg, #node-area canvas.decor { pointer-events: none; } /* les overlays ne bloquent pas le drop */
+#node-area .node { position: absolute; z-index: 10; pointer-events: auto; }
