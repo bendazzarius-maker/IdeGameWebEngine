@@ -11,8 +11,11 @@ export function importGLTF(file){
   loader.load(url, (gltf)=>{
     const obj = gltf.scene || new THREE.Object3D();
     obj.name = obj.name || 'GLTF';
+    // Ajoute l'objet importé à la scène
     const id = addObject(obj);
-    EventBus.emit('objectSelected', id);
+    // Informe l'interface qu'un nouvel objet est présent et le sélectionne
+    EventBus.emit('sceneUpdated');
+    EventBus.emit('objectSelected', { id });
     if(file instanceof File) URL.revokeObjectURL(url);
   });
 }

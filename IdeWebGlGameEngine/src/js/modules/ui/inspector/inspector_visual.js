@@ -4,7 +4,7 @@ import { EventBus } from '../../system/event_bus.js';
 import * as GameProps from '../../data/game_properties.js';
 
 let currentId = null;
-EventBus.on('objectSelected', id=>{ currentId = id; });
+EventBus.on('objectSelected', data=>{ currentId = typeof data === 'object' ? data.id : data; });
 
 /**
  * Affiche et édite les Game Properties d'un node de visual scripting

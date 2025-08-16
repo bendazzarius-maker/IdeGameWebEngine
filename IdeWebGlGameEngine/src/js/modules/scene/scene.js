@@ -36,4 +36,7 @@ export function list(){
 
 export function getObject(id){ return objects.get(id); }
 
-export default { getScene, addObject, removeObject, renameObject, list, getObject };
+// Fournit un instantané simplifié de la scène
+export function getSceneSnapshot(){ return list(); }
+
+export default { getScene, addObject, removeObject, renameObject, list, getObject, getSceneSnapshot };

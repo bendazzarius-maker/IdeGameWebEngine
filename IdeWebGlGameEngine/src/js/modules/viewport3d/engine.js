@@ -1,45 +1,84 @@
-import { initRenderer, drawScene } from './renderer.js';
-import { attachInput } from './input.js';
-import { addCube, addPlane } from './primitives.js';
-import bus from '../../core/bus.js';
-import object3DManager from '../../../core/Object3DManager.js';
+// Moteur Three.js pour le viewport 3D
 
-const state = {
-  gl: null, canvas: null,
-  camera: { mode:'persp', pos:[3,3,3], target:[0,0,0], up:[0,1,0], fov:60, orthoSize:5 },
-  scene: { objects: [] },
-};
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
+import { EventBus } from '../system/event_bus.js';
+import { getScene, addObject, getObject } from '../scene/scene.js';
 
-bus.on('object3d:add', (obj) => {
-  if (!state.scene.objects.includes(obj)) state.scene.objects.push(obj);
-});
+let renderer, camera, controls, transform, dom;
 
-bus.on('object3d:remove', (obj) => {
-  const idx = state.scene.objects.indexOf(obj);
-  if (idx !== -1) state.scene.objects.splice(idx, 1);
-});
-
+// Initialise le viewport avec caméra, contrôles et boucle de rendu
 export function initViewport3D(canvas){
-  state.canvas = canvas;
-  const gl = canvas.getContext('webgl', { antialias:true, alpha:false });
-  if (!gl) throw new Error('WebGL not supported');
-  state.gl = gl;
-  initRenderer(gl, state);
-  attachInput(canvas, state);
-  const plane = addPlane(state.scene, { size:10, color:[0.2,0.2,0.25], grid:true });
-  const cube = addCube(state.scene, { size:1, color:[0.8,0.3,0.3] });
-  object3DManager.add(plane);
-  object3DManager.add(cube);
-  requestAnimationFrame(loop);
+  dom = canvas;
+  const scene = getScene();
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  camera   = new THREE.PerspectiveCamera(60, 1, 0.1, 1000);
+  camera.position.set(0, 2, 5);
+  controls = new OrbitControls(camera, canvas);
+  transform = new TransformControls(camera, canvas);
+  transform.addEventListener('dragging-changed', e=> controls.enabled = !e.value);
+  scene.add(transform);
+
+  canvas.addEventListener('pointerdown', onClick);
+  window.addEventListener('resize', resize);
+  resize();
+  animate();
+
+  // Attache les TransformControls sur l'objet sélectionné
+  EventBus.on('objectSelected', data => {
+    const id = typeof data === 'object' ? data.id : data;
+    const obj = getObject(id);
+    if (obj && transform) transform.attach(obj);
+  });
 }
-function loop(){ drawScene(state.gl, state); requestAnimationFrame(loop); }
-export function setView(mode){ state.camera.mode=mode; }
-export function numpadView(key){
-  const c = state.camera; const d = 6;
-  if (key==='Numpad1') { c.pos=[0,0,d]; c.up=[0,1,0]; }
-  if (key==='Numpad3') { c.pos=[d,0,0]; c.up=[0,1,0]; }
-  if (key==='Numpad7') { c.pos=[0,d,0]; c.up=[0,0,-1]; }
-  if (key==='Numpad5') { c.mode = (c.mode==='persp'?'ortho':'persp'); }
-  if (key==='Numpad9') { c.pos=[-c.pos[0], -c.pos[1], -c.pos[2]]; }
+
+// Ajoute une lumière de type demandé à la scène
+export function addLight(kind){
+  const scene = getScene();
+  let light = null;
+  if(kind === 'directional') light = new THREE.DirectionalLight(0xffffff, 1);
+  if(kind === 'point')       light = new THREE.PointLight(0xffffff, 1);
+  if(kind === 'spot')        light = new THREE.SpotLight(0xffffff, 1);
+  if(!light) return null;
+  light.position.set(2, 4, 2);
+  const id = addObject(light);
+  EventBus.emit('sceneUpdated');
+  return id;
 }
-export default { initViewport3D, numpadView };
+
+// Définit le mode des TransformControls (translate/rotate/scale)
+export function setTransformMode(mode){
+  transform?.setMode(mode);
+}
+
+function resize(){
+  if(!renderer || !dom) return;
+  const w = dom.clientWidth || window.innerWidth;
+  const h = dom.clientHeight || window.innerHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w/h; camera.updateProjectionMatrix();
+}
+
+// Sélection d'objet via raycasting
+function onClick(evt){
+  const rect = dom.getBoundingClientRect();
+  const mouse = new THREE.Vector2(
+    ((evt.clientX - rect.left) / rect.width) * 2 - 1,
+    -((evt.clientY - rect.top) / rect.height) * 2 + 1
+  );
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(getScene().children, true);
+  if (hits[0]) {
+    EventBus.emit('objectSelected', { id: hits[0].object.id });
+  }
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  renderer.render(getScene(), camera);
+}
+
+export default { initViewport3D, addLight, setTransformMode };
+
