@@ -220,6 +220,17 @@ export function createGraph({area, viewport, wireSvg, libContainer, zoomLabel, n
     return id;
   }
 
+  // Création de nœud à partir de son type logique.
+  // Cette fonction recherche la définition dans le catalogue
+  // puis délègue à addNode pour l'instanciation réelle.
+  function createNodeByType(type, x=40, y=40){
+    const def = (NodeCatalog || []).find(s => (s.type||s.id) === type);
+    if (!def) return null;
+    const id = addNode(def, x, y);
+    const node = VS.nodes.get(id);
+    return { id, view: node?.el };
+  }
+
   function addRerouteNode(x,y,type){
     const id=`n${VS.seq++}`;
     const el=document.createElement('div');
@@ -569,6 +580,10 @@ export function createGraph({area, viewport, wireSvg, libContainer, zoomLabel, n
     duplicateNode(id){ const n=VS.nodes.get(id); if(!n) return; const x=parseFloat(n.el.style.left||'0')+30, y=parseFloat(n.el.style.top||'0')+30; addNode(n.def,x,y); drawWires(); },
     centerOnNode(id){ const n=VS.nodes.get(id); if(!n) return; const r=area.getBoundingClientRect(); const nx=parseFloat(n.el.style.left||'0'); const ny=parseFloat(n.el.style.top||'0'); VS.pan.x=r.width/2-(nx*VS.zoom+64); VS.pan.y=r.height/2-(ny*VS.zoom+40); setViewportTransform(); },
     cutAllEdgesOf(id){ VS.edges = VS.edges.filter(e => e.from.id!==id && e.to.id!==id); drawWires(); },
-    setViewportTransform
+    setViewportTransform,
+    // Compatibilité avec app.js : API simplifiées
+    createNode: createNodeByType,
+    getScale(){ return VS.zoom; },
+    redrawWires(){ drawWires(); }
   };
 }
