@@ -4,6 +4,7 @@
 
 // BLOCK 1 — IMPORTS
 import { renderLibrary } from './modules/visual/Library.js';
+import { registerCatalog } from './modules/visual/catalog.js';
 import Inspector from './modules/inspector/inspector.js';
 import View3D from './modules/viewport3d/engine.js';              // optional; ok if the canvas is absent
 import { mountOutliner } from './modules/outliner/outliner.js';    // optional; ok if file exists
@@ -160,6 +161,7 @@ function initTabs() {
 // BLOCK 10 — initUI + DOM ready
 async function initUI() {
   await ensureGraph();
+  registerCatalog();
   await initLibrary();
   initInspectorUI('visual');
   initOutlinerUI();
