@@ -1,0 +1,20 @@
+// Importation d'objets GLTF 2.0
+
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { addObject } from '../scene/scene.js';
+import { EventBus } from '../system/event_bus.js';
+
+export function importGLTF(file){
+  const loader = new GLTFLoader();
+  const url = typeof file === 'string' ? file : URL.createObjectURL(file);
+  loader.load(url, (gltf)=>{
+    const obj = gltf.scene || new THREE.Object3D();
+    obj.name = obj.name || 'GLTF';
+    const id = addObject(obj);
+    EventBus.emit('objectSelected', id);
+    if(file instanceof File) URL.revokeObjectURL(url);
+  });
+}
+
+export default { importGLTF };
