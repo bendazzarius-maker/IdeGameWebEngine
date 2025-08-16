@@ -4,7 +4,7 @@ import { EventBus } from '../../system/event_bus.js';
 import * as GameProps from '../../data/game_properties.js';
 
 let currentId = null;
-EventBus.on('objectSelected', id=>{ currentId = id; });
+EventBus.on('objectSelected', data=>{ currentId = typeof data === 'object' ? data.id : data; });
 
 /**
  * Rend le panneau de propriétés pour le code

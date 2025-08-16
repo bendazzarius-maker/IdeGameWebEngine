@@ -65,7 +65,7 @@ async function initLibrary() {
 
 // BLOCK 5 — initInspectorUI
 function initInspectorUI(active = 'visual_scripting') {
-  const insp = $('[data-role="inspector"], #inspector');
+  const insp = $('[data-role="inspector"]');
   if (!insp) return;
   Inspector.initInspector(insp);
   setContext(active);
@@ -73,7 +73,7 @@ function initInspectorUI(active = 'visual_scripting') {
 
 // BLOCK 6 — initOutliner (version simple liée au contexte)
 function initOutlinerUI() {
-  const panel = $('[data-role="outliner-list"], #outliner-list, .outliner-list');
+  const panel = $('[data-role="outliner-list"]');
   if (!panel) return;
   try { Outliner.initOutliner(panel); } catch (_) {}
 }
@@ -139,7 +139,7 @@ function initTabs() {
     setContext(map[key] || 'visual_scripting');
 
     if (key === 'viewport') {
-      const canvas = $('[data-role="viewport3d-canvas"], #viewport3d');
+      const canvas = $('[data-role="viewport3d-canvas"]');
       if (canvas && View3D && typeof View3D.initViewport3D === 'function' && !canvas._vs3dInit) {
         try { View3D.initViewport3D(canvas); canvas._vs3dInit = true; } catch (e) { console.error('[app] viewport3D init:', e); }
       }

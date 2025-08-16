@@ -24,7 +24,8 @@ export function initViewport(canvas){
   resize();
   animate();
 
-  EventBus.on('objectSelected', id=>{
+  EventBus.on('objectSelected', data=>{
+    const id = typeof data === 'object' ? data.id : data;
     const obj = getObject(id); if(obj) transform.attach(obj);
   });
 }
@@ -47,7 +48,7 @@ function onClick(evt){
   raycaster.setFromCamera(mouse, camera);
   const hits = raycaster.intersectObjects(getScene().children, true);
   if(hits[0]){
-    EventBus.emit('objectSelected', hits[0].object.id);
+    EventBus.emit('objectSelected', { id: hits[0].object.id });
   }
 }
 
