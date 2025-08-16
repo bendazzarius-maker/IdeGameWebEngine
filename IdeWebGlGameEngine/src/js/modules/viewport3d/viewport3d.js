@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { EventBus } from '../system/event_bus.js';
-import { getScene, getObject } from './scene.js';
+import { getScene, getObject } from '../scene/scene.js';
 
 let renderer, camera, controls, transform, dom;
 

@@ -1,4 +1,4 @@
-// Inspector pour le contexte de visual scripting
+// Inspector pour le contexte code : édition des Game Properties
 
 import { EventBus } from '../../system/event_bus.js';
 import * as GameProps from '../../data/game_properties.js';
@@ -7,15 +7,22 @@ let currentId = null;
 EventBus.on('objectSelected', id=>{ currentId = id; });
 
 /**
- * Affiche et édite les Game Properties d'un node de visual scripting
- * @param {HTMLElement} el conteneur ciblé
+ * Rend le panneau de propriétés pour le code
+ * @param {HTMLElement} el conteneur cible
  */
 export function render(el){
   const id = currentId;
-  if(!id){ el.textContent='Sélectionnez un node pour voir ses propriétés'; return; }
+  if(!id){ el.textContent = 'Sélectionnez un objet dans l\'Outliner'; return; }
+
+  const titre = document.createElement('h4');
+  titre.textContent = 'Game Properties';
+  titre.className = 'mb-2 text-xs text-slate-400';
+  el.appendChild(titre);
+
   renderGameProps(el, id);
 }
 
+// ----- Gestion de l'édition des Game Properties -----
 function renderGameProps(el, id){
   const list = document.createElement('div'); el.appendChild(list);
   function refresh(){
@@ -38,3 +45,5 @@ function renderGameProps(el, id){
   add.onclick=()=>{ GameProps.set(id,'prop','bool',false); refresh(); };
   el.appendChild(add);
 }
+
+export default { render };

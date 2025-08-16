@@ -3,6 +3,7 @@
 import { EventBus } from '../../system/event_bus.js';
 import { getObject } from '../../scene/scene.js';
 import * as GameProps from '../../data/game_properties.js';
+import { importGLTF } from '../../import/gltf_importer.js';
 
 let currentId = null;
 EventBus.on('objectSelected', id=>{ currentId = id; });
@@ -21,6 +22,19 @@ export function render(el){
   gpTitle.textContent = 'Game Properties'; gpTitle.className='mt-4 mb-2 text-xs text-slate-400';
   el.appendChild(gpTitle);
   renderGameProps(el, id);
+
+  // Bouton d'importation de fichiers GLTF
+  const imp = document.createElement('button');
+  imp.textContent = 'Importer GLTF';
+  imp.className = 'mt-4 px-2 py-1 bg-slate-700 text-xs';
+  imp.onclick = ()=>{
+    const input = document.createElement('input');
+    input.type='file';
+    input.accept='.gltf,.glb';
+    input.onchange = ()=>{ const f=input.files[0]; if(f) importGLTF(f); };
+    input.click();
+  };
+  el.appendChild(imp);
 }
 
 function makeVec3(label, vec){
