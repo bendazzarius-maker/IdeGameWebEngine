@@ -169,7 +169,10 @@
 
         <!-- Autres onglets (placeholders) -->
         <section id="tab-code" class="h-full hidden"></section>
-        <section id="tab-viewport" class="h-full hidden"></section>
+        <section id="tab-viewport" class="h-full hidden">
+          <!-- Canvas WebGL utilisé par le module Viewport3D -->
+          <canvas id="viewport3d" data-role="viewport3d-canvas" class="w-full h-full"></canvas>
+        </section>
         <section id="tab-shader" class="h-full hidden"></section>
         <section id="tab-audio" class="h-full hidden"></section>
         <section id="tab-animation" class="h-full hidden"></section>

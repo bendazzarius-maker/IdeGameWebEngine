@@ -16,12 +16,27 @@ const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 // BLOCK 3 — ensureGraph (safe)
 async function ensureGraph() {
   if (window.graph) return window.graph;
+
+  // Récupération de toutes les zones nécessaires au module de graph
+  // - area : conteneur principal
+  // - viewport : zone où les nœuds sont placés
+  // - wireSvg : calque SVG pour les câbles
+  // - libContainer/zoomLabel/nameInput/... : éléments d'interface optionnels
   const area = $('#node-area') || $('[data-role="vs-area"]');
   if (!area) return null;
+  const viewport     = area.querySelector('#viewport');
+  const wireSvg      = area.querySelector('#wires');
+  const libContainer = $('#node-library');
+  const zoomLabel    = $('#zoom-label');
+  const nameInput    = $('#vs-name');
+  const assignSelect = $('#vs-assign');
+  const scriptList   = $('#script-list');
+
   try {
     const mod = await import('./modules/visual/graph.js');
     if (typeof mod.createGraph === 'function') {
-      window.graph = mod.createGraph({ area });
+      // Initialisation du graph avec toutes les références DOM
+      window.graph = mod.createGraph({ area, viewport, wireSvg, libContainer, zoomLabel, nameInput, assignSelect, scriptList });
       return window.graph;
     }
   } catch (e) {
@@ -38,7 +53,9 @@ async function initLibrary() {
   const onCreate = async (type) => {
     const g = await ensureGraph();
     if (!g || typeof g.createNode !== 'function') return;
+    // Demande au graph de créer un nœud du type choisi
     const node = g.createNode(type);
+    // Le DOM du nœud est renvoyé pour que l'on puisse, par exemple, le rendre visible
     if (node && node.view) node.view.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   };
 
@@ -99,17 +116,16 @@ function initNodeAreaDnD() {
     const g = await ensureGraph();
     if (!g || typeof g.createNode !== 'function') return;
 
+    // Position du drop convertie dans le repère du graph
     const rect = area.getBoundingClientRect();
     const scale = typeof g.getScale === 'function' ? (g.getScale() || 1) : 1;
     const x = (e.clientX - rect.left) / scale;
     const y = (e.clientY - rect.top)  / scale;
 
-    const node = g.createNode(type);
-    if (node) {
-      node.x = x; node.y = y;
-      if (node.view) { node.view.style.left = x + 'px'; node.view.style.top = y + 'px'; }
-      if (typeof g.redrawWires === 'function') g.redrawWires();
-    }
+    // On délègue la création du nœud au graph qui se charge aussi
+    // de l'ajouter à la bonne position
+    g.createNode(type, x, y);
+    if (typeof g.redrawWires === 'function') g.redrawWires();
   });
 }
 
