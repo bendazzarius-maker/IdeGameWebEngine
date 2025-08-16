@@ -49,14 +49,11 @@ function renderResults(container, grouped, query, onCreate){
              // click = créer
              btn.onclick=()=> onCreate && onCreate(spec.type);
 
-             // drag = DnD vers node-area
-             btn.draggable = true;
-             btn.dataset.nodeType = spec.type;
-             btn.addEventListener('dragstart', (e)=>{
-               e.dataTransfer.setData('text/node-type', spec.type);
-               e.dataTransfer.setData('text/plain', spec.type); // fallback
-               e.dataTransfer.effectAllowed='copy';
-             });
+            // drag = DnD vers node-area
+            btn.draggable = true;
+            btn.ondragstart = (e) => {
+               e.dataTransfer.setData("application/x-node-type", JSON.stringify(spec));
+            };
 
              grid.appendChild(btn);
            });

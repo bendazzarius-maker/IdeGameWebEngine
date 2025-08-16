@@ -523,8 +523,20 @@ export function createGraph({area, viewport, wireSvg, libContainer, zoomLabel, n
     }
   }
   area.addEventListener('dragover',(e)=>e.preventDefault());
-  area.addEventListener('drop',(e)=>{ e.preventDefault(); const data=e.dataTransfer.getData('application/x-node-type'); if(!data) return;
-    const def=JSON.parse(data); const c=screenToContent(e.clientX,e.clientY); const id=addNode(def,c.x,c.y); log(`Dropped node: ${def.type} (#${id})`); drawWires(); });
+  area.addEventListener('drop',(e)=>{
+    e.preventDefault();
+    const data=e.dataTransfer.getData('application/x-node-type');
+    if(!data) return;
+    const def=JSON.parse(data);
+    if (!def || !def.type) {
+      console.warn('❌ Node drop ignored — invalid spec:', data);
+      return;
+    }
+    const c=screenToContent(e.clientX,e.clientY);
+    const id=addNode(def,c.x,c.y);
+    log(`Dropped node: ${def.type} (#${id})`);
+    drawWires();
+  });
 
   /* ---------- JSON / assign / (dé)serialisation ---------- */
   function serializeNodes(){ const arr=[]; for(const n of VS.nodes.values()){ arr.push({id:n.id,type:n.def.type,title:n.def.title,x:parseFloat(n.el.style.left||'0'),y:parseFloat(n.el.style.top||'0')}); } return arr; }
