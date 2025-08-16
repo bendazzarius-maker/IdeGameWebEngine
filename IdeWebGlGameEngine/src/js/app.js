@@ -4,10 +4,11 @@
 
 // BLOCK 1 — IMPORTS
 import { renderLibrary } from './modules/visual/Library.js';
-import Inspector from './modules/inspector/inspector.js';
-import View3D from './modules/viewport3d/engine.js';              // optional; ok if the canvas is absent
-import { mountOutliner } from './modules/outliner/outliner.js';    // optional; ok if file exists
-import { attachContextMenu } from './modules/visual/context.js';   // optional; ok if file exists
+import Inspector from './modules/ui/inspector/inspector.js';
+import View3D from './modules/viewport3d/engine.js';              // optionnel : fonctionne même sans canvas
+import Outliner from './modules/ui/outliner.js';
+import { attachContextMenu } from './modules/visual/context.js';   // optionnel : ok si absent
+import { setContext } from './modules/context.js';
 
 // BLOCK 2 — HELPERS
 const $  = (sel, root = document) => root.querySelector(sel);
@@ -63,34 +64,18 @@ async function initLibrary() {
 }
 
 // BLOCK 5 — initInspectorUI
-function initInspectorUI(active = 'visual') {
+function initInspectorUI(active = 'visual_scripting') {
   const insp = $('[data-role="inspector"], #inspector');
   if (!insp) return;
   Inspector.initInspector(insp);
-  Inspector.switchInspector(active);
+  setContext(active);
 }
 
-// BLOCK 6 — initOutliner (try our outliner; if not present, try bridge)
+// BLOCK 6 — initOutliner (version simple liée au contexte)
 function initOutlinerUI() {
   const panel = $('[data-role="outliner-list"], #outliner-list, .outliner-list');
   if (!panel) return;
-
-  // 1) Try our outliner module (no error if it is not available)
-  try { mountOutliner(panel); } catch (_) {}
-
-  // 2) Generic bridge: if your outliner already renders items with data-kind/data-id
-  panel.addEventListener('click', (e) => {
-    const it = e.target.closest('[data-kind][data-id]');
-    if (!it) return;
-    const id = it.getAttribute('data-id');
-    // dynamic import kept minimal and with the correct path
-    import('./services/outliner.service.js')
-      .then((mod) => {
-        const S = mod.OutlinerService || mod.default;
-        if (S && typeof S.selectOnly === 'function') S.selectOnly(id);
-      })
-      .catch(() => { /* silent if service not present */ });
-  }, { capture: false });
+  try { Outliner.initOutliner(panel); } catch (_) {}
 }
 
 // BLOCK 7 — initNodeAreaDnD (Library -> Visual Scripting)
@@ -145,8 +130,8 @@ function initTabs() {
 
   function show(key) {
     sections.forEach(({ key: k, el }) => el.classList.toggle('hidden', k !== key));
-    const map = { visual: 'visual', code: 'code', viewport: 'viewport3d', shader: 'shader', audio: 'audio', animation: 'animation', video: 'video' };
-    Inspector.switchInspector(map[key] || 'visual');
+    const map = { visual: 'visual_scripting', code: 'code', viewport: 'viewport_3d', shader: 'shader', audio: 'audio', animation: 'animation', video: 'video' };
+    setContext(map[key] || 'visual_scripting');
 
     if (key === 'viewport') {
       const canvas = $('[data-role="viewport3d-canvas"], #viewport3d');
@@ -177,7 +162,7 @@ function initTabs() {
 async function initUI() {
   await ensureGraph();
   await initLibrary();
-  initInspectorUI('visual');
+  initInspectorUI('visual_scripting');
   initOutlinerUI();
   initNodeAreaDnD();
   initContextMenu();
