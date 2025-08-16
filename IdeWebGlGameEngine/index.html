@@ -124,14 +124,7 @@
       <aside id="left-pane" class="w-64 min-w-48 max-w-[40vw] bg-panel/60 border-r border-white/5 flex flex-col">
         <div class="px-3 py-2 border-b border-white/5"><h2 class="text-xs uppercase tracking-wider text-slate-400">Outliner</h2></div>
         <div class="grow min-h-0 overflow-auto p-2 space-y-3">
-          <ul id="obj-list" class="space-y-1 text-sm">
-            <li class="bg-white/5 rounded p-2">PlayerCapsule</li>
-            <li class="bg-white/5 rounded p-2">Track_A01</li>
-            <li class="bg-white/5 rounded p-2">WaterVolume</li>
-            <li class="bg-white/5 rounded p-2">SkyDome</li>
-          </ul>
-          <p class="text-xs text-slate-400">Scripts (Visual)</p>
-          <ul id="script-list" class="p-2 pt-1 text-sm space-y-1"></ul>
+          <div data-role="outliner-list" class="outliner-list"></div>
         </div>
       </aside>
       <div id="div-left" class="divider-v bg-white/5"></div>
@@ -171,7 +164,7 @@
         <section id="tab-code" class="h-full hidden"></section>
         <section id="tab-viewport" class="h-full hidden">
           <!-- Canvas WebGL utilisé par le module Viewport3D -->
-          <canvas id="viewport3d" data-role="viewport3d-canvas" class="w-full h-full"></canvas>
+          <canvas id="viewport3d" data-role="viewport3d-canvas" class="w-full h-full block"></canvas>
         </section>
         <section id="tab-shader" class="h-full hidden"></section>
         <section id="tab-audio" class="h-full hidden"></section>
@@ -181,16 +174,8 @@
 
       <div id="div-right" class="divider-v bg-white/5"></div>
 
-      <!-- INSPECTOR (simple, non contextuel) -->
-      <aside id="right-pane" class="w-72 min-w-56 max-w-[45vw] bg-panel/60 border-l border-white/5 flex flex-col">
-        <div class="px-3 py-2 border-b border-white/5"><h2 class="text-xs uppercase tracking-wider text-slate-400">Inspector</h2></div>
-        <div class="grow min-h-0 overflow-auto p-3 space-y-3">
-          <div class="bg-white/5 rounded-lg p-3">
-            <div class="text-xs text-slate-400 mb-2">Selected</div>
-            <div id="selection" class="text-sm">—</div>
-          </div>
-        </div>
-      </aside>
+      <!-- INSPECTOR -->
+      <aside data-role="inspector" id="inspector" class="w-72 min-w-60 bg-panel/60 border-l border-white/5"></aside>
     </div>
 
     <div id="div-bottom" class="divider-h bg-white/5"></div>
@@ -205,6 +190,6 @@
   </div>
 
   <!-- Charge l'app (AUCUN boot.js ici) -->
-  <script type="module" src="src/js/app.js"></script>
+  <script type="module" src="/src/js/app.js"></script>
 </body>
 </html>

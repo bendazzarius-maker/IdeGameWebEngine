@@ -123,14 +123,19 @@ function initContextMenu() {
 
 // BLOCK 9 — initTabs (IDE tabs)
 function initTabs() {
-  const conf = ['visual','code','viewport','shader','audio','animation','video'];
-  const sections = conf
-    .map((key) => ({ key, el: document.getElementById('tab-' + key) }))
-    .filter((x) => x.el);
+  const sections = $$('.ide-tab')
+    .map((btn) => {
+      const tgt = btn.getAttribute('data-target');
+      if (!tgt) return null;
+      const key = tgt.replace(/^tab-/, '');
+      const el = document.getElementById('tab-' + key);
+      return el ? { key, el } : null;
+    })
+    .filter(Boolean);
 
   function show(key) {
     sections.forEach(({ key: k, el }) => el.classList.toggle('hidden', k !== key));
-    const map = { visual: 'visual_scripting', code: 'code', viewport: 'viewport_3d', shader: 'shader', audio: 'audio', animation: 'animation', video: 'video' };
+    const map = { visual: 'visual_scripting', code: 'code', viewport: 'viewport_3d' };
     setContext(map[key] || 'visual_scripting');
 
     if (key === 'viewport') {
