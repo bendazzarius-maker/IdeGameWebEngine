@@ -6,7 +6,6 @@
 import { renderLibrary } from './modules/visual/Library.js';
 import Inspector from './modules/ui/inspector/inspector.js';
 import View3D from './modules/viewport3d/engine.js';              // optionnel : fonctionne même sans canvas
-import Outliner from './modules/ui/outliner.js';
 import { attachContextMenu } from './modules/visual/context.js';   // optionnel : ok si absent
 import { setContext } from './modules/context.js';
 
@@ -71,14 +70,7 @@ function initInspectorUI(active = 'visual_scripting') {
   setContext(active);
 }
 
-// BLOCK 6 — initOutliner (version simple liée au contexte)
-function initOutlinerUI() {
-  const panel = $('[data-role="outliner-list"]');
-  if (!panel) return;
-  try { Outliner.initOutliner(panel); } catch (_) {}
-}
-
-// BLOCK 7 — initNodeAreaDnD (Library -> Visual Scripting)
+// BLOCK 6 — initNodeAreaDnD (Library -> Visual Scripting)
 function initNodeAreaDnD() {
   const area = $('#node-area') || $('[data-role="vs-area"]');
   if (!area) return;
@@ -114,14 +106,14 @@ function initNodeAreaDnD() {
   });
 }
 
-// BLOCK 8 — initContextMenu (right click)
+// BLOCK 7 — initContextMenu (right click)
 function initContextMenu() {
   const area = $('#node-area') || $('[data-role="vs-area"]');
   if (!area || !window.graph) return;
   try { attachContextMenu(area, window.graph); } catch (_) {}
 }
 
-// BLOCK 9 — initTabs (IDE tabs)
+// BLOCK 8 — initTabs (IDE tabs)
 function initTabs() {
   const sections = $$('.ide-tab')
     .map((btn) => {
@@ -163,12 +155,11 @@ function initTabs() {
   if (first) first.classList.add('bg-white/10');
 }
 
-// BLOCK 10 — initUI + DOM ready
+// BLOCK 9 — initUI + DOM ready
 async function initUI() {
   await ensureGraph();
   await initLibrary();
   initInspectorUI('visual_scripting');
-  initOutlinerUI();
   initNodeAreaDnD();
   initContextMenu();
   initTabs();

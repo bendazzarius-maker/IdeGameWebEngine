@@ -2,7 +2,7 @@
 import bus from '../core/bus.js';
 
 // Bloc 2 constantes/dictionnaires
-const TYPE = { COLLECTION:'COLLECTION', MESH:'MESH', ARMATURE:'ARMATURE', CAMERA:'CAMERA', LIGHT:'LIGHT', EMPTY:'EMPTY' };
+const TYPE = { COLLECTION:'COLLECTION', MESH:'MESH', ARMATURE:'ARMATURE', BONE:'BONE', CAMERA:'CAMERA', LIGHT:'LIGHT', EMPTY:'EMPTY', GROUP:'GROUP' };
 const _state = {
   nodes: new Map(),
   expanded: new Map(),
@@ -68,6 +68,17 @@ function reparent(id,newParentId){
 }
 function setExpanded(id,bool){ _state.expanded.set(id,!!bool); }
 function getExpanded(id){ return _state.expanded.get(id)||false; }
+function removeNode(id){
+  if(id==='root') return;
+  const node=_state.nodes.get(id); if(!node) return;
+  if(isLocked(id)) return;
+  [...node.children].forEach(c=>removeNode(c));
+  const parent=_state.nodes.get(node.parentId);
+  if(parent) parent.children=parent.children.filter(cid=>cid!==id);
+  _state.nodes.delete(id);
+  if(_state.selection===id) _state.selection=null;
+  notify();
+}
 
 // Bloc 4 exports
 export const OutlinerService = {
@@ -86,6 +97,7 @@ export const OutlinerService = {
   reparent,
   setExpanded,
   getExpanded,
+  removeNode,
   onChange,
 };
 export default OutlinerService;

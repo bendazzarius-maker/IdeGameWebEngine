@@ -36,6 +36,8 @@
     }
   </script>
 
+  <link rel="stylesheet" href="/styles/overrides.css">
+
   <style>
     /* --- Layout / UX --- */
     .divider-v{ width:6px; cursor:col-resize }
@@ -124,7 +126,25 @@
       <aside id="left-pane" class="w-64 min-w-48 max-w-[40vw] bg-panel/60 border-r border-white/5 flex flex-col">
         <div class="px-3 py-2 border-b border-white/5"><h2 class="text-xs uppercase tracking-wider text-slate-400">Outliner</h2></div>
         <div class="grow min-h-0 overflow-auto p-2 space-y-3">
-          <div data-role="outliner-list" class="outliner-list"></div>
+          <div data-role="outliner-list" class="outliner-list"
+               data-tree-class="outliner__tree"
+               data-node-class="outliner__node"
+               data-twisty-class="outliner__twisty"
+               data-vis-class="outliner__vis"
+               data-name-class="outliner__name"
+               data-actions-class="outliner__actions"
+               data-toolbar-class="outliner__toolbar"
+               data-btn-class="outliner__btn"
+               data-selected-class="outliner--selected">
+            <div class="outliner__toolbar" data-role="outliner-toolbar">
+              <button class="outliner__btn" data-act="new">+ New Collection</button>
+              <button class="outliner__btn" data-act="expand">Expand All</button>
+              <button class="outliner__btn" data-act="collapse">Collapse All</button>
+              <input class="outliner__btn" data-role="search" type="search" placeholder="Search" />
+              <button class="outliner__btn" data-act="unparent">Unparent</button>
+              <button class="outliner__btn" data-act="delete">Delete</button>
+            </div>
+          </div>
         </div>
       </aside>
       <div id="div-left" class="divider-v bg-white/5"></div>

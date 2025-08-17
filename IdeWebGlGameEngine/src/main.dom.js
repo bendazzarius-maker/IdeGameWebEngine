@@ -10,7 +10,8 @@ const { importGLTF } = GLTFImporter;
 async function boot(){
   let outEl = document.querySelector('#outliner') ||
               document.querySelector('.outliner') ||
-              document.querySelector('[data-role="outliner"]');
+              document.querySelector('[data-role="outliner"]') ||
+              document.querySelector('[data-role="outliner-list"]');
   if(!outEl){
     outEl = document.createElement('div');
     outEl.id = 'outliner';
