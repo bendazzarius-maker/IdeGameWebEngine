@@ -1,0 +1,38 @@
+/* --- Layout / UX --- */
+.divider-v{ width:6px; cursor:col-resize }
+.divider-h{ height:6px; cursor:row-resize }
+.dragging{ user-select:none !important }
+.nodemap-cursor{ cursor:grab }
+.nodemap-panning{ cursor:grabbing }
+
+/* --- Nodes --- */
+.node{ user-select:none }
+.node .header{ cursor:move }
+.node.selected{ outline:2px solid rgba(56,189,248,.6); outline-offset:0; }
+
+/* --- Pins --- */
+.port{ width:12px; height:12px; border-radius:999px; box-shadow:0 0 0 2px rgba(0,0,0,.25) inset }
+.port[data-dir="in"]{ outline:1px solid rgba(255,255,255,.25) }
+.port[data-dir="out"]{ outline:1px solid rgba(255,255,255,.10) }
+.port:hover{ transform:scale(1.15) }
+.port.field{ border-radius:2px; transform:rotate(45deg); }
+.port.field:hover{ transform:rotate(45deg) scale(1.15); }
+
+/* --- Wires --- */
+svg#wires{ pointer-events:none }             /* le fond SVG ne capte rien */
+svg#wires path.edge{ pointer-events:auto }   /* chaque câble est cliquable (Ctrl+clic) */
+.ghost-wire{ pointer-events:none; stroke-dasharray:6 4 }
+/* feedback mismatch (jaune/noir + croix rouge au milieu) */
+.mismatch-wire-y{ stroke:#facc15; stroke-width:4; stroke-dasharray:10 6; fill:none }
+.mismatch-wire-k{ stroke:#0b0f17; stroke-width:2.5; stroke-dasharray:10 6; stroke-dashoffset:8; fill:none }
+
+/* --- Menus --- */
+.menu{ display:none }
+.menu[data-open="true"]{ display:block }
+/* Node area layering */
+#node-area { position: relative; overflow: hidden; }
+#node-area #wires { z-index: 5; pointer-events: none; }
+#node-area .node { position: absolute; z-index: 10; pointer-events: auto; }
+#node-area .frame { z-index: 8; pointer-events: auto; }
+/* Tout overlay décoratif doit laisser passer la souris */
+.overlay, .grid-overlay { pointer-events: none; }
