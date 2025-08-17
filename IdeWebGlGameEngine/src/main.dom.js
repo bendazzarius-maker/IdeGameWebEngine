@@ -7,20 +7,14 @@ import GLTFImporter from './js/services/gltf.importer.js';
 const { importGLTF } = GLTFImporter;
 
 // Bloc 3 opérateurs
-function boot(){
+async function boot(){
   let outEl = document.querySelector('#outliner') ||
               document.querySelector('.outliner') ||
               document.querySelector('[data-role="outliner"]');
   if(!outEl){
-    const placeholder = document.querySelector('[data-role="outliner-list"]');
-    if(placeholder){
-      outEl = placeholder;
-      outEl.innerHTML = '';
-    } else {
-      outEl = document.createElement('div');
-      outEl.id = 'outliner';
-      document.body.appendChild(outEl);
-    }
+    outEl = document.createElement('div');
+    outEl.id = 'outliner';
+    document.body.appendChild(outEl);
   }
   mountOutliner(outEl);
 
@@ -38,7 +32,7 @@ function boot(){
 
   const params = new URLSearchParams(window.location.search);
   const url = params.get('model');
-  if(url) importGLTF(url);
+  if(url) await importGLTF(url);
 }
 
 document.addEventListener('DOMContentLoaded', boot);
