@@ -1,4 +1,3 @@
-import './styles/tailwind.css'
 import { createApp, reactive } from 'vue'
 import Outliner from './components/Outliner.vue'
 import Inspector from './components/Inspector.vue'
