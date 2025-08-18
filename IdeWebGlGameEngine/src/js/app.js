@@ -17,6 +17,7 @@ function init() {
   const inspEl = document.querySelector(mounts.inspector);
   if (inspEl) createApp(Inspector).mount(inspEl);
   bus.emit('scene:ready');
+  bus.emit('context.changed', { ctx: 'viewport' });
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init, { once: true });

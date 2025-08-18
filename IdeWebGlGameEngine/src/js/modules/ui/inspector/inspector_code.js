@@ -1,49 +1,25 @@
-// Inspector pour le contexte code : édition des Game Properties
+import * as Codegen from '../../services/codegen.service.js';
+import * as NodeFactory from '../../services/node.factory.js';
 
-import { EventBus } from '../../system/event_bus.js';
-import * as GameProps from '../../data/game_properties.js';
+export function mount(el){
+  el.innerHTML = '';
+  const gen = document.createElement('button');
+  gen.textContent = 'Generate JS';
+  gen.className = 'px-2 py-1 bg-slate-700 text-xs rounded mr-2';
+  const sim = document.createElement('button');
+  sim.textContent = 'Simulate';
+  sim.className = 'px-2 py-1 bg-slate-700 text-xs rounded';
 
-let currentId = null;
-EventBus.on('objectSelected', data=>{ currentId = typeof data === 'object' ? data.id : data; });
-
-/**
- * Rend le panneau de propriétés pour le code
- * @param {HTMLElement} el conteneur cible
- */
-export function render(el){
-  const id = currentId;
-  if(!id){ el.textContent = 'Sélectionnez un objet dans l\'Outliner'; return; }
-
-  const titre = document.createElement('h4');
-  titre.textContent = 'Game Properties';
-  titre.className = 'mb-2 text-xs text-slate-400';
-  el.appendChild(titre);
-
-  renderGameProps(el, id);
+  gen.onclick = () => {
+    const graph = NodeFactory.getGraph();
+    const js = Codegen.generate(graph);
+    console.log(js);
+  };
+  sim.onclick = () => {
+    const graph = NodeFactory.getGraph();
+    console.log('Simulate', graph);
+  };
+  el.append(gen, sim);
 }
 
-// ----- Gestion de l'édition des Game Properties -----
-function renderGameProps(el, id){
-  const list = document.createElement('div'); el.appendChild(list);
-  function refresh(){
-    list.innerHTML = '';
-    GameProps.list(id).forEach(gp=>{
-      const row = document.createElement('div'); row.className='flex items-center gap-1 py-1';
-      const name = document.createElement('input'); name.value=gp.name; name.className='w-24 bg-slate-700 text-xs px-1';
-      const type = document.createElement('select'); ['bool','int','float','string'].forEach(t=>{ const o=document.createElement('option'); o.value=t;o.textContent=t; if(gp.type===t)o.selected=true; type.appendChild(o); }); type.className='bg-slate-700 text-xs';
-      const val = document.createElement('input'); val.value=gp.value; val.className='flex-1 bg-slate-700 text-xs px-1';
-      const del = document.createElement('button'); del.textContent='×'; del.className='text-red-400 px-1';
-      del.onclick=()=>{ GameProps.remove(id, gp.name); refresh(); };
-      name.onchange=()=>{ GameProps.rename(id, gp.name, name.value); refresh(); };
-      type.onchange=()=>{ GameProps.set(id, gp.name, type.value, val.value); refresh(); };
-      val.onchange=()=>{ GameProps.set(id, gp.name, gp.type, val.value); refresh(); };
-      row.append(name,type,val,del); list.appendChild(row);
-    });
-  }
-  refresh();
-  const add = document.createElement('button'); add.textContent='Ajouter'; add.className='mt-2 px-2 py-1 bg-slate-700 text-xs';
-  add.onclick=()=>{ GameProps.set(id,'prop','bool',false); refresh(); };
-  el.appendChild(add);
-}
-
-export default { render };
+export default { mount };

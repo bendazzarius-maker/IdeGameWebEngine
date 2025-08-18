@@ -1,5 +1,5 @@
 // Bloc 1 imports
-// none
+import bus from '../core/bus.js';
 
 // Bloc 2 state / types / constantes
 const _state = {
@@ -10,7 +10,7 @@ const _state = {
   listeners: new Set(),
   nextId: 1,
 };
-function emit(evt,p){ _state.listeners.forEach(fn=>fn(evt,p)); }
+function emit(evt,p){ _state.listeners.forEach(fn=>fn(evt,p)); bus.emit(evt,p); }
 function ensureRoot(){
   if(!_state.collections.has(_state.rootId)){
     _state.collections.set(_state.rootId,{ id:_state.rootId, name:'Root', parentId:null, children:new Set(), objects:new Set() });
@@ -26,17 +26,17 @@ function createCollection(parentId=_state.rootId,name='Collection',forceId){
   const id = forceId || 'C'+(_state.nextId++);
   _state.collections.set(id,{ id,name,parentId,children:new Set(),objects:new Set() });
   _state.collections.get(parentId)?.children.add(id);
-  emit('collection:add',{id,parentId,name});
+  emit('collection.add',{id,parentId,name});
   return id;
 }
-function renameCollection(id,name){ const c=_state.collections.get(id); if(!c) return; c.name=name; emit('collection:rename',{id,name}); }
+function renameCollection(id,name){ const c=_state.collections.get(id); if(!c) return; c.name=name; emit('collection.rename',{id,name}); }
 function removeCollection(id){
   if(id===_state.rootId) return false;
   const c=_state.collections.get(id); if(!c) return false;
   if(c.children.size||c.objects.size) return false; // refuse if non empty
   _state.collections.get(c.parentId)?.children.delete(id);
   _state.collections.delete(id);
-  emit('collection:remove',{id});
+  emit('collection.remove',{id});
   return true;
 }
 function childrenOfCollection(id){ const c=_state.collections.get(id); if(!c) return {collections:[],objects:[]}; return { collections:[...c.children], objects:[...c.objects] }; }
@@ -46,10 +46,10 @@ function addObject(obj,parentId=null,collectionId=_state.rootId){
   _state.objects.set(id,o);
   if(parentId) _state.objects.get(parentId)?.children.add(id);
   _state.collections.get(collectionId)?.objects.add(id);
-  emit('object:add',{...o});
+  emit('object.add',{...o});
   return id;
 }
-function renameObject(id,name){ const o=_state.objects.get(id); if(!o) return; o.name=name; emit('object:rename',{id,name}); }
+function renameObject(id,name){ const o=_state.objects.get(id); if(!o) return; o.name=name; emit('object.rename',{id,name}); }
 function removeObject(id){
   const o=_state.objects.get(id); if(!o) return;
   [...o.children].forEach(cid=>removeObject(cid));
@@ -57,21 +57,21 @@ function removeObject(id){
   _state.collections.get(o.collectionId)?.objects.delete(id);
   _state.objects.delete(id);
   _state.selection.delete(id);
-  emit('object:remove',{id});
+  emit('object.remove',{id});
 }
 function reparent(objectId,newParentId){
   const o=_state.objects.get(objectId); if(!o || objectId===newParentId) return;
   let cur=newParentId; while(cur){ if(cur===objectId) return; cur=_state.objects.get(cur)?.parentId; }
   _state.objects.get(o.parentId)?.children.delete(objectId);
   o.parentId=newParentId; _state.objects.get(newParentId)?.children.add(objectId);
-  emit('object:reparent',{id:objectId,parentId:newParentId});
+  emit('object.move',{id:objectId,parentId:newParentId});
 }
-function moveToCollection(objectId,collectionId){ const o=_state.objects.get(objectId); if(!o) return; _state.collections.get(o.collectionId)?.objects.delete(objectId); o.collectionId=collectionId; _state.collections.get(collectionId)?.objects.add(objectId); emit('object:move',{id:objectId,collectionId}); }
-function toggleVisible(id){ const o=_state.objects.get(id); if(!o) return; o.visible=!o.visible; emit('object:visible',{id,visible:o.visible}); }
-function toggleLocked(id){ const o=_state.objects.get(id); if(!o) return; o.locked=!o.locked; emit('object:locked',{id,locked:o.locked}); }
-function clearSelection(){ _state.selection.clear(); emit('selection', getSelection()); }
-function selectOnly(id){ _state.selection.clear(); if(id) _state.selection.add(id); emit('selection', getSelection()); }
-function toggleSelect(id){ _state.selection.has(id)?_state.selection.delete(id):_state.selection.add(id); emit('selection', getSelection()); }
+function moveToCollection(objectId,collectionId){ const o=_state.objects.get(objectId); if(!o) return; _state.collections.get(o.collectionId)?.objects.delete(objectId); o.collectionId=collectionId; _state.collections.get(collectionId)?.objects.add(objectId); emit('object.move',{id:objectId,collectionId}); }
+function toggleVisible(id){ const o=_state.objects.get(id); if(!o) return; o.visible=!o.visible; emit('object.visible',{id,visible:o.visible}); }
+function toggleLocked(id){ const o=_state.objects.get(id); if(!o) return; o.locked=!o.locked; emit('object.locked',{id,locked:o.locked}); }
+function clearSelection(){ _state.selection.clear(); emit('selection.changed',{ id:null }); }
+function selectOnly(id){ _state.selection.clear(); if(id) _state.selection.add(id); emit('selection.changed',{ id }); }
+function toggleSelect(id){ _state.selection.has(id)?_state.selection.delete(id):_state.selection.add(id); const first=[..._state.selection][0]||null; emit('selection.changed',{ id:first }); }
 function getSelection(){ return [..._state.selection]; }
 function setExtras(id,extras){ const o=_state.objects.get(id); if(o) o.extras=extras; }
 function snapshot(){
