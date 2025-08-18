@@ -1,31 +1,14 @@
-// Bus d'événements central pour l'IDE
-// Chaque module peut émettre ou écouter les événements via ce bus
+// PATH: src/js/modules/system/event_bus.js
 
-const _listeners = new Map(); // nom -> Set de callbacks
+// Bloc 1 — imports
+import bus from '../../core/bus.js';
 
-export const EventBus = {
-  /**
-   * Abonne une fonction à un événement
-   * @param {string} evt nom de l'événement
-   * @param {Function} cb callback appelée à l'émission
-   * @returns {Function} fonction de désabonnement
-   */
-  on(evt, cb){
-    if(!_listeners.has(evt)) _listeners.set(evt, new Set());
-    _listeners.get(evt).add(cb);
-    return () => _listeners.get(evt)?.delete(cb);
-  },
+// Bloc 2 — dictionaries / constants
+// (none)
 
-  /**
-   * Émet un événement
-   * @param {string} evt nom de l'événement
-   * @param {any} data données associées
-   */
-  emit(evt, data){
-    (_listeners.get(evt) || []).forEach(fn => {
-      try{ fn(data); }catch(err){ console.error(err); }
-    });
-  }
-};
+// Bloc 3 — classes / functions / logic
+export const EventBus = bus;
 
+// Bloc 4 — event wiring / init
 export default EventBus;
+

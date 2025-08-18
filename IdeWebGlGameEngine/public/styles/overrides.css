@@ -2,3 +2,14 @@
 #node-area, [data-role="vs-area"] { position: relative; overflow: hidden; pointer-events: auto; }
 #node-area .overlay, #node-area svg, #node-area canvas.decor { pointer-events: none; } /* les overlays ne bloquent pas le drop */
 #node-area .node { position: absolute; z-index: 10; pointer-events: auto; }
+
+/* Outliner */
+.outliner__toolbar{display:flex;gap:4px;margin-bottom:4px;}
+.outliner__btn{padding:2px 4px;font-size:12px;background:var(--outliner-btn-bg,transparent);border:1px solid rgba(255,255,255,0.1);border-radius:2px;}
+.outliner__tree{list-style:none;margin:0;padding-left:0;}
+.outliner__node{user-select:none;}
+.outliner__node>div{display:flex;align-items:center;gap:4px;padding:2px 4px;}
+.outliner__twisty{cursor:pointer;width:1em;display:inline-block;}
+.outliner__name{flex:1;}
+.outliner__actions button{margin-left:4px;}
+.outliner--selected>div{background-color:rgba(56,189,248,.2);}
