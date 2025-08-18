@@ -3,6 +3,7 @@
 // ======================================================================
 
 // BLOCK 1 — IMPORTS
+import { EventBus } from './modules/system/event_bus.js';
 import { renderLibrary } from './modules/visual/Library.js';
 import Inspector from './modules/ui/inspector/inspector.js';
 import View3D from './modules/viewport3d/engine.js';              // optionnel : fonctionne même sans canvas
@@ -163,6 +164,7 @@ async function initUI() {
   initNodeAreaDnD();
   initContextMenu();
   initTabs();
+  EventBus.on('context.changed', ctx => console.log('[app] context:', ctx));
 }
 
 if (document.readyState === 'loading') {

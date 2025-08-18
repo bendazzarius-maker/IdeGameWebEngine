@@ -12,7 +12,7 @@ let currentContext = 'visual_scripting'; // contexte par défaut
 export function setContext(ctx){
   if(ctx === currentContext) return;
   currentContext = ctx;
-  EventBus.emit('contextChanged', currentContext);
+  EventBus.emit('context.changed', currentContext);
 }
 
 /**
@@ -29,7 +29,7 @@ export function getContext(){
  * @returns {Function} fonction de désabonnement
  */
 export function onContextChanged(cb){
-  return EventBus.on('contextChanged', cb);
+  return EventBus.on('context.changed', cb);
 }
 
 export default { setContext, getContext, onContextChanged };

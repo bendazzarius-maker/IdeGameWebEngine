@@ -1,5 +1,6 @@
 // Bloc 1 imports
 import { OutlinerService } from './outliner.service.js';
+import bus from '../core/bus.js';
 
 // Bloc 2 constantes/dictionnaires
 const { TYPE } = OutlinerService;
@@ -29,6 +30,7 @@ export async function importGLTF(url){
     (n.children||[]).forEach(c=> traverse(c,id));
   };
   (json.scenes?.[0]?.nodes||[]).forEach(n=> traverse(n,colId));
+  bus.emit('scene.updated');
   return { collectionId: colId, name };
 }
 

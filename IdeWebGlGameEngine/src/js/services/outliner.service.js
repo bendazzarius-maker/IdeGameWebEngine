@@ -1,90 +1,99 @@
-// Bloc 1 imports
+// PATH: src/js/services/outliner.service.js
+// Bloc 1 — imports
 import bus from '../core/bus.js';
 
-// Bloc 2 constantes/dictionnaires
+// Bloc 2 — dictionaries / constants
 const TYPE = { COLLECTION:'COLLECTION', MESH:'MESH', ARMATURE:'ARMATURE', BONE:'BONE', CAMERA:'CAMERA', LIGHT:'LIGHT', EMPTY:'EMPTY', GROUP:'GROUP' };
-const _state = {
+const state = {
   nodes: new Map(),
   expanded: new Map(),
   selection: null,
   listeners: new Set(),
 };
-_state.nodes.set('root',{ id:'root', name:'Root', type:TYPE.COLLECTION, parentId:null, children:[], visible:true, locked:false });
+state.nodes.set('root',{ id:'root', name:'Root', type:TYPE.COLLECTION, parentId:null, children:[], visible:true, locked:false });
 
-// Bloc 3 opérateurs
-function notify(){ _state.listeners.forEach(fn=>fn()); }
-function onChange(fn){ _state.listeners.add(fn); return ()=>_state.listeners.delete(fn); }
-function addNode(node){
-  const parent = _state.nodes.get(node.parentId || 'root');
+// Bloc 3 — classes / functions / logic
+function notify(){ state.listeners.forEach(fn=>fn()); }
+export function onChange(fn){ state.listeners.add(fn); return ()=>state.listeners.delete(fn); }
+export function addNode(node){
+  const parent = state.nodes.get(node.parentId || 'root');
   const n = { ...node, children: node.children || [], visible: node.visible !== false, locked: !!node.locked };
-  _state.nodes.set(n.id,n);
+  state.nodes.set(n.id,n);
   parent?.children.push(n.id);
   notify();
+  const evt = n.type===TYPE.COLLECTION ? 'collection.add' : 'object.add';
+  bus.emit(evt, { id:n.id, parentId: parent?.id });
   return n.id;
 }
-function registerCollection(importId,name){
+export function registerCollection(importId,name){
   const id = `col:${importId}`;
   addNode({ id, name, type:TYPE.COLLECTION, parentId:'root' });
-  _state.expanded.set(id,true);
+  state.expanded.set(id,true);
   return id;
 }
-function selectOnly(id){
-  _state.selection = id;
+export function rename(id,name){
+  const node = state.nodes.get(id); if(!node) return;
+  node.name = name;
   notify();
-  bus.emit('selection:change', id);
+  const evt = node.type===TYPE.COLLECTION ? 'collection.rename' : 'object.rename';
+  bus.emit(evt,{ id, name });
 }
-function getSelection(){ return _state.selection; }
-function toggleVisibility(id){
-  const node = _state.nodes.get(id); if(!node) return;
+export function selectOnly(id){
+  state.selection = id;
+  notify();
+  bus.emit('selection.changed',{ id });
+}
+export function getSelection(){ return state.selection; }
+export function toggleVisibility(id){
+  const node = state.nodes.get(id); if(!node) return;
   const val = !node.visible;
-  const apply = nid=>{ const n=_state.nodes.get(nid); if(!n) return; n.visible=val; n.children.forEach(apply); };
+  const apply = nid=>{ const n=state.nodes.get(nid); if(!n) return; n.visible=val; n.children.forEach(apply); };
   apply(id);
   notify();
-  bus.emit('visibility:change', { id, visible: val });
 }
-function toggleLock(id){
-  const node = _state.nodes.get(id); if(!node) return;
+export function toggleLock(id){
+  const node = state.nodes.get(id); if(!node) return;
   const val = !node.locked;
-  const apply = nid=>{ const n=_state.nodes.get(nid); if(!n) return; n.locked=val; n.children.forEach(apply); };
+  const apply = nid=>{ const n=state.nodes.get(nid); if(!n) return; n.locked=val; n.children.forEach(apply); };
   apply(id);
   notify();
-  bus.emit('lock:change', { id, locked: val });
 }
-function isLocked(id){ return _state.nodes.get(id)?.locked || false; }
-function isVisible(id){ return _state.nodes.get(id)?.visible || false; }
-function getType(id){ return _state.nodes.get(id)?.type || null; }
-function getName(id){ return _state.nodes.get(id)?.name || ''; }
-function getChildren(id){ return [...(_state.nodes.get(id)?.children || [])]; }
-function reparent(id,newParentId){
-  const node=_state.nodes.get(id); const parent=_state.nodes.get(newParentId);
+export function isLocked(id){ return state.nodes.get(id)?.locked || false; }
+export function isVisible(id){ return state.nodes.get(id)?.visible || false; }
+export function getType(id){ return state.nodes.get(id)?.type || null; }
+export function getName(id){ return state.nodes.get(id)?.name || ''; }
+export function getChildren(id){ return [...(state.nodes.get(id)?.children || [])]; }
+export function reparent(id,newParentId){
+  const node=state.nodes.get(id); const parent=state.nodes.get(newParentId);
   if(!node||!parent) return false;
-  if(isLocked(id)) return false;
-  let cur=newParentId; while(cur){ if(cur===id||isLocked(cur)) return false; cur=_state.nodes.get(cur)?.parentId; }
-  const old=_state.nodes.get(node.parentId); if(old) old.children=old.children.filter(cid=>cid!==id);
+  const old=state.nodes.get(node.parentId);
+  if(old) old.children=old.children.filter(cid=>cid!==id);
   node.parentId=newParentId; parent.children.push(id);
   notify();
-  bus.emit('reparent:done',{ id, newParentId });
+  bus.emit('object.move',{ id, parentId:newParentId });
   return true;
 }
-function setExpanded(id,bool){ _state.expanded.set(id,!!bool); }
-function getExpanded(id){ return _state.expanded.get(id)||false; }
-function removeNode(id){
+export function setExpanded(id,bool){ state.expanded.set(id,!!bool); }
+export function getExpanded(id){ return state.expanded.get(id)||false; }
+export function removeNode(id){
   if(id==='root') return;
-  const node=_state.nodes.get(id); if(!node) return;
-  if(isLocked(id)) return;
+  const node=state.nodes.get(id); if(!node) return;
   [...node.children].forEach(c=>removeNode(c));
-  const parent=_state.nodes.get(node.parentId);
+  const parent=state.nodes.get(node.parentId);
   if(parent) parent.children=parent.children.filter(cid=>cid!==id);
-  _state.nodes.delete(id);
-  if(_state.selection===id) _state.selection=null;
+  state.nodes.delete(id);
+  if(state.selection===id) state.selection=null;
   notify();
+  const evt = node.type===TYPE.COLLECTION ? 'collection.remove' : 'object.remove';
+  bus.emit(evt,{ id });
 }
 
-// Bloc 4 exports
+// Bloc 4 — event wiring / init
 export const OutlinerService = {
   TYPE,
   registerCollection,
   addNode,
+  rename,
   selectOnly,
   getSelection,
   toggleVisibility,

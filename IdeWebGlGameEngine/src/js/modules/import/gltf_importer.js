@@ -14,8 +14,9 @@ export function importGLTF(file){
     // Ajoute l'objet importé à la scène
     const id = addObject(obj);
     // Informe l'interface qu'un nouvel objet est présent et le sélectionne
-    EventBus.emit('sceneUpdated');
-    EventBus.emit('objectSelected', { id });
+    EventBus.emit('scene.updated');
+    EventBus.emit('object.add', { id });
+    EventBus.emit('selection.changed', { id });
     if(file instanceof File) URL.revokeObjectURL(url);
   });
 }

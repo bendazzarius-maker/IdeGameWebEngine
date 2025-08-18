@@ -1,8 +1,10 @@
 // Bloc 1 imports
 import { OutlinerService } from '../services/outliner.service.js';
+import Assets from '../services/assets.service.js';
 
 // Bloc 2 constantes/dictionnaires
 const ICONS = { COLLECTION:'🗂️', MESH:'🧊', ARMATURE:'🦴', BONE:'🦴', CAMERA:'📷', LIGHT:'💡', EMPTY:'◻️', GROUP:'◻️' };
+const ASSET_ICONS = { image:'🖼️', audio:'🎵', video:'📹', shader:'🎨', code:'📄', model:'🧊' };
 
 // Bloc 3 opérateurs
 export function mountOutliner(root){
