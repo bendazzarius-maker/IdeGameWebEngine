@@ -1,21 +1,20 @@
-// Inspector pour le contexte de visual scripting
-
+// PATH: src/js/modules/ui/inspector/inspector_visual.js
+// Bloc 1 — imports
 import { EventBus } from '../../system/event_bus.js';
 import * as GameProps from '../../data/game_properties.js';
+import CodeGen from '../../../services/codegen.service.js';
 
+// Bloc 2 — dictionaries / constants
 let currentId = null;
-EventBus.on('objectSelected', data=>{ currentId = typeof data === 'object' ? data.id : data; });
+EventBus.on('selection.changed', data=>{ currentId = typeof data === 'object' ? data.id : data; });
 
-/**
- * Affiche et édite les Game Properties d'un node de visual scripting
- * @param {HTMLElement} el conteneur ciblé
- */
+// Bloc 3 — classes / functions / logic
 export function render(el){
   const id = currentId;
   if(!id){ el.textContent='Sélectionnez un node pour voir ses propriétés'; return; }
   renderGameProps(el, id);
+  renderActions(el, id);
 }
-
 function renderGameProps(el, id){
   const list = document.createElement('div'); el.appendChild(list);
   function refresh(){
@@ -38,3 +37,14 @@ function renderGameProps(el, id){
   add.onclick=()=>{ GameProps.set(id,'prop','bool',false); refresh(); };
   el.appendChild(add);
 }
+function renderActions(el, id){
+  const wrap = document.createElement('div'); wrap.className='mt-4 flex gap-2';
+  const gen = document.createElement('button'); gen.textContent='Generate JS'; gen.className='px-2 py-1 bg-slate-700 text-xs';
+  gen.onclick=()=>{ CodeGen.generate({ id }, 'Node'+id); };
+  const sim = document.createElement('button'); sim.textContent='Simulate'; sim.className='px-2 py-1 bg-slate-700 text-xs';
+  sim.onclick=()=>{ CodeGen.simulate({ id }); };
+  wrap.append(gen, sim); el.appendChild(wrap);
+}
+
+// Bloc 4 — event wiring / init
+export default { render };

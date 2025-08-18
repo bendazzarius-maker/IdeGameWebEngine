@@ -1,28 +1,22 @@
-// Inspector pour le contexte code : édition des Game Properties
-
+// PATH: src/js/modules/ui/inspector/inspector_code.js
+// Bloc 1 — imports
 import { EventBus } from '../../system/event_bus.js';
 import * as GameProps from '../../data/game_properties.js';
 
+// Bloc 2 — dictionaries / constants
 let currentId = null;
-EventBus.on('objectSelected', data=>{ currentId = typeof data === 'object' ? data.id : data; });
+EventBus.on('selection.changed', data=>{ currentId = typeof data === 'object' ? data.id : data; });
 
-/**
- * Rend le panneau de propriétés pour le code
- * @param {HTMLElement} el conteneur cible
- */
+// Bloc 3 — classes / functions / logic
 export function render(el){
   const id = currentId;
   if(!id){ el.textContent = 'Sélectionnez un objet dans l\'Outliner'; return; }
-
   const titre = document.createElement('h4');
   titre.textContent = 'Game Properties';
   titre.className = 'mb-2 text-xs text-slate-400';
   el.appendChild(titre);
-
   renderGameProps(el, id);
 }
-
-// ----- Gestion de l'édition des Game Properties -----
 function renderGameProps(el, id){
   const list = document.createElement('div'); el.appendChild(list);
   function refresh(){
@@ -46,4 +40,5 @@ function renderGameProps(el, id){
   el.appendChild(add);
 }
 
+// Bloc 4 — event wiring / init
 export default { render };
