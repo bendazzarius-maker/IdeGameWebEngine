@@ -8,7 +8,6 @@ import { renderLibrary } from './modules/visual/Library.js';
 import Inspector from './modules/ui/inspector/inspector.js';
 import View3D from './modules/viewport3d/engine.js';              // optionnel : fonctionne même sans canvas
 import { attachContextMenu } from './modules/visual/context.js';   // optionnel : ok si absent
-import { setContext } from './modules/context.js';
 
 // BLOCK 2 — HELPERS
 const $  = (sel, root = document) => root.querySelector(sel);
@@ -64,11 +63,10 @@ async function initLibrary() {
 }
 
 // BLOCK 5 — initInspectorUI
-function initInspectorUI(active = 'visual_scripting') {
+function initInspectorUI() {
   const insp = $('[data-role="inspector"]');
   if (!insp) return;
-  Inspector.initInspector(insp);
-  setContext(active);
+  Inspector.mount(insp);
 }
 
 // BLOCK 6 — initNodeAreaDnD (Library -> Visual Scripting)
@@ -128,8 +126,8 @@ function initTabs() {
 
   function show(key) {
     sections.forEach(({ key: k, el }) => el.classList.toggle('hidden', k !== key));
-    const map = { visual: 'visual_scripting', code: 'code', viewport: 'viewport_3d' };
-    setContext(map[key] || 'visual_scripting');
+    const map = { visual: 'visual', code: 'code', viewport: 'viewport' };
+    EventBus.emit('context.changed', { ctx: map[key] || 'visual' });
 
     if (key === 'viewport') {
       const canvas = $('[data-role="viewport3d-canvas"]');
@@ -160,10 +158,11 @@ function initTabs() {
 async function initUI() {
   await ensureGraph();
   await initLibrary();
-  initInspectorUI('visual_scripting');
+  initInspectorUI();
   initNodeAreaDnD();
   initContextMenu();
   initTabs();
+  EventBus.emit('context.changed', { ctx: 'viewport' });
   EventBus.on('context.changed', ctx => console.log('[app] context:', ctx));
 }
 

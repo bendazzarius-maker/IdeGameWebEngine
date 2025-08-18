@@ -1,8 +1,9 @@
 // PATH: src/js/modules/ui/inspector/inspector.js
 // Bloc 1 — imports
+// PATH: src/js/modules/ui/inspector/inspector.js
+// Bloc 1 — imports
 import { EventBus } from '../../system/event_bus.js';
-import { getContext, onContextChanged } from '../../context.js';
-import * as viewport3d from './inspector_viewport.js';
+import * as viewport from './inspector_viewport.js';
 import * as visual from './inspector_visual.js';
 import * as code from './inspector_code.js';
 import * as audio from './inspector_audio.js';
@@ -10,31 +11,37 @@ import * as shader from './inspector_shader.js';
 import * as world from './inspector_world.js';
 
 // Bloc 2 — dictionaries / constants
+// Bloc 2 — dictionaries / constants
 const registry = {
-  viewport_3d: viewport3d,
-  visual_scripting: visual,
+  viewport,
+  visual,
   code,
   audio,
   shader,
   world,
 };
-let root;
+let root = null;
+let current = null;
+let activeCtx = null;
 
 // Bloc 3 — classes / functions / logic
-export function initInspector(el){
+export function mount(el){
   root = el || document.getElementById('inspector');
   if(!root) return;
-  onContextChanged(render);
-  EventBus.on('selection.changed', render);
-  render();
+  EventBus.on('context.changed', data => setContext(data?.ctx ?? data));
+  EventBus.on('selection.changed', () => { if(activeCtx) setContext(activeCtx); });
 }
-function render(){
-  if(!root) return;
-  const ctx = getContext();
-  const mod = registry[ctx];
+
+export function setContext(ctx){
+  if(!root || !ctx) return;
+  activeCtx = ctx;
+  current?.unmount?.(root);
   root.innerHTML = '';
-  mod?.render?.(root);
+  const mod = registry[ctx];
+  const fn = mod?.mount || mod?.render;
+  fn?.(root);
+  current = mod;
 }
 
 // Bloc 4 — event wiring / init
-export default { initInspector };
+export default { mount, setContext };
